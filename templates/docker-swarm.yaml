@@ -1,0 +1,178 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Deploy docker swarm environment
+Parameters:
+  KeyName:
+    ConstraintDescription: Must be the name of an existing EC2 KeyPair
+    Description: Name of an existing EC2 KeyPair to enable SSH access to the instances
+    Type: AWS::EC2::KeyPair::KeyName
+  ManagerDiskSize:
+    Default: 20
+    Description: Size of Manager's ephemeral storage volume in GiB
+    MaxValue: 1024
+    MinValue: 8
+    Type: Number
+  ManagerInstanceType:
+    AllowedValues:
+      - t2.micro
+      - t2.small
+      - t2.medium
+      - t2.large
+      - t2.xlarge
+      - t2.2xlarge           
+      - m5.large
+      - m5.xlarge
+      - m5.2xlarge
+      - m5.4xlarge
+      - m5.12xlarge
+      - m5.24xlarge
+      - m4.large
+      - m4.xlarge
+      - m4.2xlarge
+      - m4.4xlarge
+      - m4.10xlarge
+      - m4.16xlarge
+      - m3.medium
+      - m3.large
+      - m3.xlarge
+      - m3.2xlarge
+      - c4.large
+      - c4.xlarge
+      - c4.2xlarge
+      - c4.4xlarge
+      - c4.8xlarge
+      - c5.large
+      - c5.xlarge
+      - c5.2xlarge
+      - c5.4xlarge
+      - c5.9xlarge
+      - c5.18xlarge
+      - c3.large
+      - c3.xlarge
+      - c3.2xlarge
+      - c3.4xlarge
+      - c3.8xlarge
+      - r3.large
+      - r3.xlarge
+      - r3.2xlarge
+      - r3.4xlarge
+      - r3.8xlarge
+      - r4.large
+      - r4.xlarge
+      - r4.2xlarge
+      - r4.4xlarge
+      - r4.8xlarge
+      - r4.16xlarge
+      - i3.large
+      - i3.xlarge
+      - i3.2xlarge
+      - i3.4xlarge
+      - i3.8xlarge
+      - i3.16xlarge
+    ConstraintDescription: Must be a valid EC2 instance type
+    Default: t2.micro
+    Description: EC2 HVM instance type (t2.micro, m3.medium, etc)
+    Type: String
+  ManagerSize:
+    AllowedValues:
+      - 1
+      - 3
+      - 5
+    Default: 3
+    Description: Number of Swarm manager nodes (1, 3, 5)
+    Type: Number
+  WorkerDiskSize:
+    Default: 20
+    Description: Size of Workers's ephemeral storage volume in GiB
+    MaxValue: 1024
+    MinValue: 20
+    Type: Number
+  WorkerInstanceType:
+    AllowedValues:
+      - t2.micro
+      - t2.small
+      - t2.medium
+      - t2.large
+      - t2.xlarge
+      - t2.2xlarge           
+      - m5.large
+      - m5.xlarge
+      - m5.2xlarge
+      - m5.4xlarge
+      - m5.12xlarge
+      - m5.24xlarge
+      - m4.large
+      - m4.xlarge
+      - m4.2xlarge
+      - m4.4xlarge
+      - m4.10xlarge
+      - m4.16xlarge
+      - m3.medium
+      - m3.large
+      - m3.xlarge
+      - m3.2xlarge
+      - c4.large
+      - c4.xlarge
+      - c4.2xlarge
+      - c4.4xlarge
+      - c4.8xlarge
+      - c5.large
+      - c5.xlarge
+      - c5.2xlarge
+      - c5.4xlarge
+      - c5.9xlarge
+      - c5.18xlarge
+      - c3.large
+      - c3.xlarge
+      - c3.2xlarge
+      - c3.4xlarge
+      - c3.8xlarge
+      - r3.large
+      - r3.xlarge
+      - r3.2xlarge
+      - r3.4xlarge
+      - r3.8xlarge
+      - r4.large
+      - r4.xlarge
+      - r4.2xlarge
+      - r4.4xlarge
+      - r4.8xlarge
+      - r4.16xlarge
+      - i3.large
+      - i3.xlarge
+      - i3.2xlarge
+      - i3.4xlarge
+      - i3.8xlarge
+      - i3.16xlarge
+    ConstraintDescription: Must be a valid EC2 instance type
+    Default: t2.micro
+    Description: EC2 HVM instance type (t2.micro, m3.medium, etc)
+    Type: String
+  WorkerSize:
+    Default: 3
+    Description: Number of worker nodes in the Swarm (0-10)
+    MaxValue: 10
+    MinValue: 0
+    Type: Number
+Mappings:
+  Region2AMI:
+    us-east-1:
+      HVM64: ami-0922553b7b0369273
+    us-gov-west-1:
+      # !!!
+      HVM64: ami-0922553b7b0369273
+Resources:
+  ManagerLaunchConfig:
+    Type: AWS::AutoScaling::LaunchConfiguration
+    Properties:
+      AssociatePublicIpAddress: true
+      BlockDeviceMappings:
+        - DeviceName: /dev/xvdb
+          Ebs:
+            VolumeSize: !Ref ManagerDiskSize
+            VolumeType: gp2
+      ImageId: !FindInMap [Region2AMI, !Ref 'AWS::Region', HVM64]
+      InstanceType: !Ref ManagerInstanceType
+      KeyName: !Ref KeyName
+      SecurityGroups:
+        # !!!
+        - sg-0918e6cf668125577
