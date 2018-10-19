@@ -1,5 +1,48 @@
 AWSTemplateFormatVersion: 2010-09-09
 Description: Deploy docker swarm environment
+Metadata:
+  'AWS::CloudFormation::Interface':
+    ParameterGroups:
+      - Label:
+          default: Swarm Size
+        Parameters:
+          - ManagerSize
+          - WorkerSize
+      - Label:
+          default: Swarm Properties
+        Parameters:
+          - KeyName
+          - SubnetAz1
+          - SubnetAz2
+      - Label:
+          default: Swarm Manager Properties
+        Parameters:
+          - ManagerInstanceType
+          - ManagerDiskSize
+      - Label:
+          default: Swarm Worker Properties
+        Parameters:
+          - WorkerInstanceType
+          - WorkerDiskSize
+    ParameterLabels:
+      KeyName:
+        default: Which SSH key to use?
+      ManagerDiskSize:
+        default: Manager ephemeral storage volume size?
+      ManagerInstanceType:
+        default: Swarm manager instance type?
+      ManagerSize:
+        default: Number of Swarm managers?
+      SubnetAz1:
+        default: Subnet for cluster redundancy?
+      SubnetAz2:
+        default: Subnet for cluster redundancy? 
+      WorkerDiskSize:
+        default: Worker ephemeral storage volume size?
+      WorkerInstanceType:
+        default: Agent worker instance type?
+      WorkerSize:
+        default: Number of Swarm worker nodes?
 Parameters:
   KeyName:
     ConstraintDescription: Must be the name of an existing EC2 KeyPair
@@ -80,6 +123,12 @@ Parameters:
     Default: 3
     Description: Number of Swarm manager nodes (1, 3, 5)
     Type: Number
+  SubnetAz1:
+    Type: AWS::EC2::Subnet::Id
+    Description: Subnet in first availability zone
+  SubnetAz2:
+    Type: AWS::EC2::Subnet::Id
+    Description: Subnet in second availability zone
   WorkerDiskSize:
     Default: 20
     Description: Size of Workers's ephemeral storage volume in GiB
@@ -161,6 +210,31 @@ Mappings:
       # !!!
       HVM64: ami-0922553b7b0369273
 Resources:
+  ManagerAsg:
+    Type: 'AWS::AutoScaling::AutoScalingGroup'
+# Need to include signal in user data
+#    CreationPolicy:
+#      ResourceSignal:
+#        Count: !Ref ManagerSize
+#        Timeout: PT20M
+    Properties:
+      DesiredCapacity: !Ref ManagerSize
+      LaunchConfigurationName: !Ref ManagerLaunchConfig
+      MaxSize: 5
+      MinSize: 0
+      Tags:
+        - Key: Name
+          PropagateAtLaunch: true
+          Value: !Join ['-', [!Ref 'AWS::StackName', manager]]
+        - Key: swarm-node-type
+          PropagateAtLaunch: true
+          Value: manager
+        - Key: swarm-stack-id
+          PropagateAtLaunch: true
+          Value: !Ref 'AWS::StackId'
+      VPCZoneIdentifier:
+        - !Ref SubnetAz1
+        - !Ref SubnetAz2
   ManagerLaunchConfig:
     Type: AWS::AutoScaling::LaunchConfiguration
     Properties:
