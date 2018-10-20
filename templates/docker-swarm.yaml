@@ -34,9 +34,9 @@ Metadata:
       ManagerSize:
         default: Number of Swarm managers?
       SubnetAz1:
-        default: Subnet for cluster redundancy?
+        default: Subnet 1
       SubnetAz2:
-        default: Subnet for cluster redundancy? 
+        default: Subnet 2
       WorkerDiskSize:
         default: Worker ephemeral storage volume size?
       WorkerInstanceType:
@@ -212,11 +212,12 @@ Mappings:
 Resources:
   ManagerAsg:
     Type: 'AWS::AutoScaling::AutoScalingGroup'
-# Need to include signal in user data
-#    CreationPolicy:
-#      ResourceSignal:
-#        Count: !Ref ManagerSize
-#        Timeout: PT20M
+    CreationPolicy:
+      ResourceSignal:
+        Count: !Ref ManagerSize
+        Timeout: PT20M
+    DependsOn:
+      - SwarmDynDBTable
     Properties:
       DesiredCapacity: !Ref ManagerSize
       LaunchConfigurationName: !Ref ManagerLaunchConfig
@@ -250,3 +251,24 @@ Resources:
       SecurityGroups:
         # !!!
         - sg-0918e6cf668125577
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash -xe
+          export NODE_TYPE='manager'
+          export AWS_REGION=${AWS::Region}
+          export DYNAMODB_TABLE=${SwarmDynDBTable}
+          export INSTANCE_NAME='ManagerAsg'
+          /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource ManagerAsg --region ${AWS::Region}
+  SwarmDynDBTable:
+    Type: 'AWS::DynamoDB::Table'
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: node_type
+          AttributeType: S
+      KeySchema:
+        - AttributeName: node_type
+          KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
+      TableName: !Join ['-', [!Ref 'AWS::StackName', dyndbtable, swarm]]
