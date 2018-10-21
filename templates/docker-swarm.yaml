@@ -255,10 +255,11 @@ Resources:
         Fn::Base64: !Sub |
           #!/bin/bash -xe
           export NODE_TYPE='manager'
-          export AWS_REGION=${AWS::Region}
+          export REGION=${AWS::Region}
           export DYNAMODB_TABLE=${SwarmDynDBTable}
           export INSTANCE_NAME='ManagerAsg'
-          /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource ManagerAsg --region ${AWS::Region}
+          export STACK_NAME=${AWS::StackName}
+          #/opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource ManagerAsg --region ${AWS::Region}
   SwarmDynDBTable:
     Type: 'AWS::DynamoDB::Table'
     Properties:
