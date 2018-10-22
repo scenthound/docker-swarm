@@ -332,7 +332,8 @@ Mappings:
       HVM64: ami-038afe1daf2bfeb26
       HVMG2: NOT_SUPPORTED
     us-east-1:
-      HVM64: ami-0799d28a7c63d979a
+      HVM64: ami-0799d28a7c63d979a # scenthound
+      #HVM64: ami-06317668b0e667dba # docker
       HVMG2: NOT_SUPPORTED
     us-east-2:
       HVM64: ami-07607a5f2bd415ce4
